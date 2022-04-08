@@ -245,6 +245,12 @@ function DocumentConversion(options, comments) {
         if (run.isStrikethrough) {
             paths.push(findHtmlPathForRunProperty("strikethrough", "s"));
         }
+        if (run.isColored){
+            paths.push(htmlPaths.element("span", {style: 'color:' + run.isColored.color + ';'}, {fresh: false}));
+        }
+        if (run.isHighlighted){
+            paths.push(htmlPaths.element("span", {style: 'background-color:' + run.isHighlighted.color + ';'}, {fresh: false}));
+        }
         if (run.isUnderline) {
             paths.push(findHtmlPathForRunProperty("underline"));
         }
@@ -272,7 +278,6 @@ function DocumentConversion(options, comments) {
         paths.forEach(function(path) {
             nodes = path.wrap.bind(path, nodes);
         });
-
         return nodes();
     }
 
@@ -626,6 +631,8 @@ function Run(children, properties) {
         isUnderline: properties.isUnderline,
         isItalic: properties.isItalic,
         isStrikethrough: properties.isStrikethrough,
+        isColored: properties.isColored,
+        isHighlighted: properties.isHighlighted,
         isAllCaps: properties.isAllCaps,
         isSmallCaps: properties.isSmallCaps,
         verticalAlignment: properties.verticalAlignment || verticalAlignment.baseline,
@@ -867,9 +874,33 @@ function BodyReader(options) {
                 isItalic: readBooleanElement(element.first("w:i")),
                 isStrikethrough: readBooleanElement((element.first("w:strike") || element.first("w:dstrike"))),
                 isAllCaps: readBooleanElement(element.first("w:caps")),
-                isSmallCaps: readBooleanElement(element.first("w:smallCaps"))
+                isSmallCaps: readBooleanElement(element.first("w:smallCaps")),
+                isColored: readColor(element),
+                isHighlighted: readHighligth(element)
             };
         });
+    }
+
+    function readColor(element){
+        var color = false;
+        if (element.children.length > 1){
+            element.children.forEach(function(element)  {
+                if (element.name === 'w:color') {
+                    color = {color: element.attributes['w:val'] || 'FF0000'};
+                }
+            });}
+        return color;
+    }
+
+    function readHighligth(element){
+        var highlight = false;
+        if (element.children.length > 1){
+            element.children.forEach(function(element)  {
+                if (element.name === 'w:highlight') {
+                    highlight = {color: element.attributes['w:val'] || 'red'};
+                }
+            });}
+        return highlight;
     }
 
     function readUnderline(element) {
